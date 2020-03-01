@@ -27,6 +27,8 @@ import Foundation
 
 /// This protocol a describe that destination controller should be returns.
 public protocol StoryboardFactoryProtocol {
+
+    // MARK: - Instance Methods
     
     /// Instantiate transition view controller.
     func instantiateTransitionHandler() throws -> UIViewController

@@ -23,18 +23,25 @@
 //  THE SOFTWARE.
 //
 
-
 /// This factory class a performs `StoryboardFactoryProtocol` and the instantiate transition view controller.
 public struct StoryboardFactory: StoryboardFactoryProtocol {
+
+    // MARK: - Instance Properties
+
+    private var storyboard: UIStoryboard
+    private var restorationId: String
     
-    // MARK: -
-    // MARK: Properties
-    
-    // MARK: Public
+    // MARK: - StoryboardFactoryProtocol
+
     /// Instantiate transition view controller.
     public func instantiateTransitionHandler() throws -> UIViewController {
-        let controller = self.restorationId.isEmpty ? self.storyboard.instantiateInitialViewController() :
-            self.storyboard.instantiateViewController(withIdentifier: self.restorationId)
+        let controller: UIViewController?
+
+        if self.restorationId.isEmpty {
+            controller = self.storyboard.instantiateInitialViewController()
+        } else {
+            controller = self.storyboard.instantiateViewController(withIdentifier: self.restorationId)
+        }
         
         // If destination controller is nil then return error.
         guard let destination = controller else {
@@ -43,13 +50,8 @@ public struct StoryboardFactory: StoryboardFactoryProtocol {
         
         return destination
     }
-    
-    // MARK: Private
-    private var storyboard: UIStoryboard
-    private var restorationId: String
-    
-    // MARK: -
-    // MARK: Initialize
+
+    // MARK: - Initializers
     
     ///
     /// Initialize Storyboard factory from `UIStoryboard` instance.
@@ -60,7 +62,7 @@ public struct StoryboardFactory: StoryboardFactoryProtocol {
     /// - parameter storyboard: Storyboard instance.
     /// - parameter restorationId: Restiration identifier for destination view controller.
     ///
-    public init(storyboard: UIStoryboard, restorationId: String = "") {
+    public init(storyboard: UIStoryboard, restorationId: String = String()) {
         self.storyboard = storyboard
         self.restorationId = restorationId
     }
@@ -76,7 +78,7 @@ public struct StoryboardFactory: StoryboardFactoryProtocol {
     /// If you specify nil, this method looks in the main bundle of the current application.
     /// - parameter restorationId: Restiration identifier for destination view controller.
     ///
-    public init(storyboardName name: String, bundle: Bundle? = nil, restorationId: String = "") {
+    public init(storyboardName name: String, bundle: Bundle? = nil, restorationId: String = String()) {
         self.storyboard = UIStoryboard(name: name, bundle: bundle)
         self.restorationId = restorationId
     }

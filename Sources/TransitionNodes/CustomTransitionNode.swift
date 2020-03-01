@@ -25,13 +25,18 @@
 
 /// The class is responsible for what the user has implemented the transition.
 public final class CustomTransitionNode<T> {
+
+    // MARK: - Instance Properties
 	
 	private unowned var root: UIViewController
 	private var destination: UIViewController?
 	private var type: T.Type
+
+    // MARK: -
 	
-	internal var customModuleInput: Any?
-	
+	var customModuleInput: Any?
+
+    // MARK: - Initializers
 
 	///
     /// Initialize custom transition node. This class is responsible for the fact that the user will carry out necessary transition.
@@ -46,6 +51,8 @@ public final class CustomTransitionNode<T> {
 		self.destination = destination
 		self.type = type
 	}
+
+    // MARK: - Instance Methods
 	
 	///
 	/// This method is responsible for that the user realizes the transition
@@ -54,7 +61,11 @@ public final class CustomTransitionNode<T> {
 	///
 	public func transition(_ block: @escaping TransitionBlock) -> GenericTransitionNode<T> {
 		let node = GenericTransitionNode(root: root, destination: destination, for: type)
-		node.postLinkAction { block(self.root, self.destination!) }
+
+		node.postLinkAction {
+            block(self.root, self.destination!)
+        }
+
 		return node
 	}
 	
@@ -67,6 +78,7 @@ public final class CustomTransitionNode<T> {
 	///
 	public func selector(_ selector: String) -> CustomTransitionNode<T> {
 		self.customModuleInput = destination?.getModuleInput(for: selector)
+
 		return self
 	}
 	
@@ -79,6 +91,7 @@ public final class CustomTransitionNode<T> {
 	///
 	public func selector(_ selector: Selector) -> CustomTransitionNode<T> {
 		self.customModuleInput = destination?.getModuleInput(for: NSStringFromSelector(selector))
+
 		return self
 	}
 
@@ -91,6 +104,7 @@ public final class CustomTransitionNode<T> {
 	///
 	public func selector<Root, Type>(_ selector: KeyPath<Root, Type>) -> CustomTransitionNode<T> {
 		self.customModuleInput = (destination as? Root)?[keyPath: selector]
+
 		return self
 	}
 }

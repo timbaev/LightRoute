@@ -23,14 +23,29 @@
 //  THE SOFTWARE.
 //
 
-
 public final class SegueTransitionNode<T>: GenericTransitionNode<T> {
+
+    // MARK: - Instance Properties
 	
     /// Contain transition delegate for transition.
 	var transitioningDelegate: UIViewControllerTransitioningDelegate?
 	
     /// Containt segue identifer, for `prepare(for:sender:)` method.
-	var segueIdentifier: String = ""
+	var segueIdentifier = String()
+
+    // MARK: - GenericTransitionNode
+
+    ///
+    /// This method is responsible for the delivery of the controller for the subsequent initialization, then there is a transition.
+    ///
+    /// - Parameter block: Initialize controller for transition and fire.
+    /// - Throws: Throw error, if destination was nil or could not be cast to type.
+    ///
+    public override func then(_ block: @escaping TransitionSetupBlock<T>) throws {
+        try then(async: true, block)
+    }
+
+    // MARK: - Instance Methods
 	
     ///
     /// Apply UIViewControllerTransitioningDelegate for current transition.
@@ -40,19 +55,9 @@ public final class SegueTransitionNode<T>: GenericTransitionNode<T> {
     ///
 	public func add(transitioningDelegate: UIViewControllerTransitioningDelegate) -> SegueTransitionNode<T> {
 		self.transitioningDelegate = transitioningDelegate
+
 		return self
 	}
-
-    ///
-    /// This method checks if source(root) view controller conforms protocol for embed segues transition.
-    ///
-    /// - Throws: Throw error, if source(root) view controller doesn't conform `ViewContainerForEmbedSegue` protocol.
-    ///
-    private func checkForEmbedSegue() throws {
-        guard root is ViewContainerForEmbedSegue else {
-            throw LightRouteError.customError("Source viewController doesn't conform to `ViewContainerForEmbedSegue` protocol.")
-        }
-    }
     
     ///
     /// This method is responsible for the delivery of the controller for the subsequent initialization, then there is a transition.
@@ -62,18 +67,21 @@ public final class SegueTransitionNode<T>: GenericTransitionNode<T> {
     /// - Throws: Throw error, if destination was nil or could not be cast to type or not conform embed segue protocol.
     ///
 	public func then(async: Bool, _ block: @escaping TransitionSetupBlock<T>) throws {
-
         let thenBody = {
             self.root.performSegue(withIdentifier: self.segueIdentifier, sender: nil, completion: { segue in
-                if segue is EmbedSegue { try self.checkForEmbedSegue() }
+                if segue is EmbedSegue {
+                    try self.checkForEmbedSegue()
+                }
                 
                 var destination = segue.destination
+
                 destination.transitioningDelegate = self.transitioningDelegate
                 
                 if destination is UINavigationController {
                     destination = (segue.destination as! UINavigationController).topViewController ?? segue.destination
                 } else if destination is UITabBarController {
                     let tabBarController = (segue.destination as! UITabBarController)
+
                     guard let viewControllers = tabBarController.viewControllers else {
                         throw LightRouteError.customError("ViewControllers in UITabBarController can't be nil")
                     }
@@ -81,19 +89,18 @@ public final class SegueTransitionNode<T>: GenericTransitionNode<T> {
                     if tabBarController.moduleInput is T {
                         destination = tabBarController
                     } else {
-                        for controller in viewControllers {
-                            let moduleInput = (self.customModuleInput != nil) ? self.customModuleInput : destination.moduleInput
-                            if moduleInput is T || controller is T {
-                                destination = controller
-                                break
-                            }
-                        }
+                        destination = viewControllers.first(where: { controller in
+                            let moduleInput = self.customModuleInput ?? destination.moduleInput
+
+                            return moduleInput is T || controller is T
+                        }) ?? destination
                     }
                 }
                 
                 var output: Any?
                 
-                let destinationModuleInput = (self.customModuleInput != nil) ? self.customModuleInput : destination.moduleInput
+                let destinationModuleInput = self.customModuleInput ?? destination.moduleInput
+
                 if let moduleInput = destinationModuleInput, moduleInput is T {
                     output = block(destination.moduleInput as! T)
                 } else if destination is T {
@@ -115,13 +122,16 @@ public final class SegueTransitionNode<T>: GenericTransitionNode<T> {
         }
 	}
 
-	///
-    /// This method is responsible for the delivery of the controller for the subsequent initialization, then there is a transition.
+    // MARK: -
+
     ///
-    /// - Parameter block: Initialize controller for transition and fire.
-    /// - Throws: Throw error, if destination was nil or could not be cast to type.
+    /// This method checks if source(root) view controller conforms protocol for embed segues transition.
     ///
-	public override func then(_ block: @escaping TransitionSetupBlock<T>) throws {
-        try then(async: true, block)
+    /// - Throws: Throw error, if source(root) view controller doesn't conform `ViewContainerForEmbedSegue` protocol.
+    ///
+    private func checkForEmbedSegue() throws {
+        guard root is ViewContainerForEmbedSegue else {
+            throw LightRouteError.customError("Source viewController doesn't conform to `ViewContainerForEmbedSegue` protocol.")
+        }
     }
 }

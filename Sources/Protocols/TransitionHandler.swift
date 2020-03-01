@@ -26,7 +26,9 @@
 import Foundation
 
 /// This protocol describe how do transition beetwen ViewControllers.
-public protocol TransitionHandler: class {
+public protocol TransitionHandler: AnyObject {
+
+    // MARK: - Instance Methods
     
     ///
     /// The method of initiating the transition in the current storyboard, which depends on the root view controller.
@@ -63,3 +65,82 @@ public protocol TransitionHandler: class {
     func closeCurrentModule() -> CloseTransitionNode
 }
 
+// MARK: -
+
+public extension TransitionHandler where Self: UIViewController {
+
+    // MARK: - Instance Methods
+
+    /// Implementation for current storyboard transition
+    func forCurrentStoryboard<T>(restorationId: String, to type: T.Type) throws -> TransitionNode<T> {
+        guard let storyboard = self.storyboard else {
+            throw LightRouteError.storyboardWasNil
+        }
+
+        let destination = storyboard.instantiateViewController(withIdentifier: restorationId)
+
+        let node = TransitionNode(root: self, destination: destination, for: type)
+
+        // Default transition action.
+        node.postLinkAction { [unowned self, unowned node] in
+            self.present(destination, animated: node.isAnimated, completion: nil)
+        }
+
+        return node
+    }
+
+    /// Implementation for storyboard factory
+    func forStoryboard<T>(factory: StoryboardFactoryProtocol, to type: T.Type) throws -> TransitionNode<T> {
+        let destination = try factory.instantiateTransitionHandler()
+
+        let node = TransitionNode(root: self, destination: destination, for: type)
+
+        // Default transition action.
+        node.postLinkAction { [unowned self, unowned node] in
+            self.present(destination, animated: node.isAnimated, completion: nil)
+        }
+
+        return node
+    }
+
+    /// Implementation for storyboard factory
+    func forSegue<T>(identifier: String, to type: T.Type) -> SegueTransitionNode<T> {
+        let node = SegueTransitionNode(root: self, destination: nil, for: type)
+
+        node.segueIdentifier = identifier
+
+        // Default transition action.
+        node.postLinkAction { [unowned node] in
+            try node.then { _ in
+                return nil
+            }
+        }
+
+        return node
+    }
+
+    /// Close current module.
+    func closeCurrentModule() -> CloseTransitionNode {
+        let node = CloseTransitionNode(root: self)
+
+        node.postLinkAction { [unowned self, unowned node] in
+            if let parent = self.parent, parent is UINavigationController {
+                let navigationController = parent as! UINavigationController
+
+                if navigationController.children.count > 1 {
+                    guard let controller = navigationController.children.dropLast().last else {
+                        return
+                    }
+
+                    navigationController.popToViewController(controller, animated: node.isAnimated)
+                } else {
+                    self.dismiss(animated: node.isAnimated, completion: nil)
+                }
+            } else if self.presentingViewController != nil {
+                self.dismiss(animated: node.isAnimated, completion: nil)
+            }
+        }
+
+        return node
+    }
+}

@@ -26,15 +26,23 @@
 
 /// Embed segue for embed views via routing
 public class EmbedSegue: UIStoryboardSegue {
-    override public func perform() {
-        guard let identifier = identifier else { return }
-        let parentViewController = source
-        let embedViewController = destination
 
-        guard let containerView = (parentViewController as? ViewContainerForEmbedSegue)?.containerViewForSegue(identifier),
-            let moduleView = embedViewController.view else {
-                return
+    // MARK: - UIStoryboardSegue
+
+    override public func perform() {
+        guard let identifier = self.identifier else {
+            return
         }
+
+        let parentViewController = self.source
+        let embedViewController = self.destination
+
+        guard let containerViewController = parentViewController as? ViewContainerForEmbedSegue,
+              let moduleView = embedViewController.view else {
+            return
+        }
+
+        let containerView = containerViewController.containerViewForSegue(identifier)
 
         parentViewController.addChild(embedViewController)
         containerView.addSubview(moduleView)
@@ -42,10 +50,45 @@ public class EmbedSegue: UIStoryboardSegue {
 
         moduleView.translatesAutoresizingMaskIntoConstraints = false
 
-        let top = NSLayoutConstraint(item: moduleView, attribute: .top, relatedBy: .equal, toItem: containerView, attribute: .top, multiplier: 1, constant: 0)
-        let bot = NSLayoutConstraint(item: moduleView, attribute: .bottom, relatedBy: .equal, toItem: containerView, attribute: .bottom, multiplier: 1, constant: 0)
-        let left = NSLayoutConstraint(item: moduleView, attribute: .left, relatedBy: .equal, toItem: containerView, attribute: .left, multiplier: 1, constant: 0)
-        let right = NSLayoutConstraint(item: moduleView, attribute: .right, relatedBy: .equal, toItem: containerView, attribute: .right, multiplier: 1, constant: 0)
+        let top = NSLayoutConstraint(
+            item: moduleView,
+            attribute: .top,
+            relatedBy: .equal,
+            toItem: containerView,
+            attribute: .top,
+            multiplier: 1,
+            constant: 0
+        )
+
+        let bot = NSLayoutConstraint(
+            item: moduleView,
+            attribute: .bottom,
+            relatedBy: .equal,
+            toItem: containerView,
+            attribute: .bottom,
+            multiplier: 1,
+            constant: 0
+        )
+
+        let left = NSLayoutConstraint(
+            item: moduleView,
+            attribute: .left,
+            relatedBy: .equal,
+            toItem: containerView,
+            attribute: .left,
+            multiplier: 1,
+            constant: 0
+        )
+
+        let right = NSLayoutConstraint(
+            item: moduleView,
+            attribute: .right,
+            relatedBy: .equal,
+            toItem: containerView,
+            attribute: .right,
+            multiplier: 1,
+            constant: 0
+        )
 
         containerView.addConstraints([top, bot, left, right])
     }

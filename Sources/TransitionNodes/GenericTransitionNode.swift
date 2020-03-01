@@ -25,20 +25,21 @@
 
 /// This class is main frame to transition's
 public class GenericTransitionNode<T> {
+
+    // MARK: - Instance Properties
 	
 	// Main transition data.
-	internal unowned var root: UIViewController
-	internal var destination: UIViewController?
-	internal var type: T.Type
+	unowned var root: UIViewController
+	var destination: UIViewController?
+	var type: T.Type
 	
     /// Contain moduleInput, if user wanna use custom selector
-	internal var customModuleInput: Any?
+	var customModuleInput: Any?
 	
 	/// Wait transition post action.
-	internal var postLinkAction: TransitionPostLinkAction?
+	var postLinkAction: TransitionPostLinkAction?
 	
-	// MARK: -
-	// MARK: Initialize
+	// MARK: - Initializers
 
 	///
     /// Initialize transition node for current transition.
@@ -53,6 +54,8 @@ public class GenericTransitionNode<T> {
 		self.destination = destination
 		self.type = type
 	}
+
+    // MARK: - Instance Methods
 	
 	///
 	/// This method is responsible for the delivery of the controller for the subsequent initialization, then there is a transition.
@@ -61,13 +64,16 @@ public class GenericTransitionNode<T> {
     /// - Throws: Throw error, if destination was nil or could not be cast to type.
     ///
 	open func then(_ block: @escaping TransitionSetupBlock<T>) throws {
-		guard let destination = self.destination else { throw LightRouteError.viewControllerWasNil("Destination") }
+		guard let destination = self.destination else {
+            throw LightRouteError.viewControllerWasNil("Destination")
+        }
 		
 		var moduleInput: Any? = (self.customModuleInput != nil) ? self.customModuleInput : destination.moduleInput
 		
 		// If first controller was UINavigationController, then try find top view controller.
 		if destination is UINavigationController {
 			let result = (destination as! UINavigationController).topViewController ?? destination
+
 			moduleInput = (self.customModuleInput != nil) ? self.customModuleInput : result.moduleInput
 		}
 		
@@ -82,6 +88,7 @@ public class GenericTransitionNode<T> {
 		}
 		
 		self.destination?.moduleOutput = moduleOutput
+
 		try self.perform()
 	}
 	
@@ -98,13 +105,16 @@ public class GenericTransitionNode<T> {
     /// - Throws: Throw error, if destination was nil.
     ///
     public func apply(to block: (UIViewController) -> Void) throws -> Self {
-        guard let destination = self.destination else { throw LightRouteError.viewControllerWasNil("Destination") }
+        guard let destination = self.destination else {
+            throw LightRouteError.viewControllerWasNil("Destination")
+        }
+
         block(destination)
+
         return self
     }
 	
 	// MARK: -
-	// MARK: Private methods
 	
 	///
 	/// This method waits to be able to fire.

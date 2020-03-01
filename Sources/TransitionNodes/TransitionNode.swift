@@ -26,24 +26,22 @@
 /// The main class that describes the current transition.
 public final class TransitionNode<T>: GenericTransitionNode<T> {
 	
-	// MARK: -
-	// MARK: Properties
-	// MARK: Public
+	// MARK: - Instance Properties
 	
 	/// Shows animated this transition or not.
 	public var isAnimated: Bool {
 		return animated
 	}
 	
-	// MARK: Private
+    // MARK: -
+
 	/// Set and get current transition animate state.
-	internal var animated: Bool = true
+	var animated: Bool = true
 	
 	/// Save current transition case.
-	private var transitionCase: TransitionStyle?
+	var transitionCase: TransitionStyle?
 	
-	// MARK: -
-	// MARK: Public methods
+	// MARK: - Instance Methods
 	
 	///
 	/// Instantiate transition case and waits, when should be active.
@@ -65,13 +63,13 @@ public final class TransitionNode<T>: GenericTransitionNode<T> {
 			guard let destination = self?.destination else {
 				throw LightRouteError.viewControllerWasNil("Destination")
 			}
+
 			guard let root = self?.root, let animated = self?.isAnimated else {
 				throw LightRouteError.viewControllerWasNil("Root")
 			}
 			
 			switch style {
 			case .navigation(style: let navStyle):
-				
 				guard let navController = root.navigationController else {
 					throw LightRouteError.viewControllerWasNil("Transition error, navigation")
 				}
@@ -79,13 +77,15 @@ public final class TransitionNode<T>: GenericTransitionNode<T> {
 				switch navStyle {
 				case .pop:
 					navController.popToViewController(destination, animated: animated)
+
 				case .present:
 					navController.present(destination, animated: animated, completion: nil)
+
 				case .push:
 					navController.pushViewController(destination, animated: animated)
 				}
+
 			case .split(style: let splitStyle):
-				
 				guard let splitController = root.splitViewController else {
 					throw LightRouteError.viewControllerWasNil("Transition error, navigation")
 				}
@@ -93,6 +93,7 @@ public final class TransitionNode<T>: GenericTransitionNode<T> {
 				switch splitStyle {
 				case .detail:
 					splitController.show(destination, sender: nil)
+
 				case .default:
 					splitController.showDetailViewController(destination, sender: nil)
 				}
@@ -100,6 +101,7 @@ public final class TransitionNode<T>: GenericTransitionNode<T> {
             case .modal(let modalStyle):
                 destination.modalTransitionStyle = modalStyle.transition
                 destination.modalPresentationStyle = modalStyle.presentation
+
                 root.present(destination, animated: animated, completion: nil)
 
             case .default:
@@ -110,33 +112,6 @@ public final class TransitionNode<T>: GenericTransitionNode<T> {
 		return self
 	}
 	
-	private func fixDestination(for style: TransitionStyle) throws {
-		switch style {
-		case .navigation(style: let navStyle):
-			guard let destination = self.destination else {
-				throw LightRouteError.viewControllerWasNil("Destination")
-			}
-			
-			guard let navController = root.navigationController else {
-				throw LightRouteError.viewControllerWasNil("Transition error, navigation")
-			}
-			
-			switch navStyle {
-			case .pop:
-				
-				let first = navController.viewControllers.first { $0.restorationIdentifier == destination.restorationIdentifier }
-				guard let result = first else {
-					throw LightRouteError.customError("Can't get pop controller in navigation controller stack.")
-				}
-				self.destination = result
-			default:
-				break
-			}
-		default:
-			break
-		}
-	}
-	
 	///
 	/// Turn on or off animate for current transition.
 	/// - Note: By default this transition is animated.
@@ -145,6 +120,7 @@ public final class TransitionNode<T>: GenericTransitionNode<T> {
 	///
 	public func transition(animate: Bool) -> TransitionNode<T> {
 		self.animated = animate
+
 		return self
 	}
 	
@@ -156,10 +132,10 @@ public final class TransitionNode<T>: GenericTransitionNode<T> {
     ///
 	public func add(transitioningDelegate: UIViewControllerTransitioningDelegate) -> TransitionNode<T> {
 		self.destination?.transitioningDelegate = transitioningDelegate
+
 		return self
 	}
-    
-	
+
 	///
 	/// Make custom transition from current transition.
 	///
@@ -173,11 +149,16 @@ public final class TransitionNode<T>: GenericTransitionNode<T> {
     /// - Throws: Throw error, if destination was nil.
 	///
 	public func customTransition() throws -> CustomTransitionNode<T> {
-		guard let destination = destination else { throw LightRouteError.viewControllerWasNil("Destination") }
+        guard let destination = self.destination else {
+            throw LightRouteError.viewControllerWasNil("Destination")
+        }
 		
 		self.postLinkAction = nil
-		let node = CustomTransitionNode(root: root, destination: destination, for: type)
-		node.customModuleInput = customModuleInput
+
+        let node = CustomTransitionNode(root: self.root, destination: destination, for: self.type)
+
+        node.customModuleInput = self.customModuleInput
+
 		return node
 	}
 	
@@ -189,7 +170,8 @@ public final class TransitionNode<T>: GenericTransitionNode<T> {
 	/// - Returns: Transition node instance with setups.
 	///
 	public func selector(_ selector: String) -> TransitionNode<T> {
-		self.customModuleInput = destination?.getModuleInput(for: selector)
+        self.customModuleInput = self.destination?.getModuleInput(for: selector)
+
 		return self
 	}
 	
@@ -201,7 +183,8 @@ public final class TransitionNode<T>: GenericTransitionNode<T> {
 	/// - Returns: Transition node instance with setups.
 	///
 	public func selector(_ selector: Selector) -> TransitionNode<T> {
-		self.customModuleInput = destination?.getModuleInput(for: NSStringFromSelector(selector))
+        self.customModuleInput = self.destination?.getModuleInput(for: NSStringFromSelector(selector))
+
 		return self
 	}
 	
@@ -213,8 +196,42 @@ public final class TransitionNode<T>: GenericTransitionNode<T> {
 	/// - Returns: Transition node instance with setups.
 	///
 	public func selector<Root, Type>(_ keyPath: KeyPath<Root, Type>) -> TransitionNode<T> {
-		self.customModuleInput = (destination as? Root)?[keyPath: keyPath]
+        self.customModuleInput = (self.destination as? Root)?[keyPath: keyPath]
+
 		return self
 	}
 
+    // MARK: -
+
+    private func fixDestination(for style: TransitionStyle) throws {
+        switch style {
+        case .navigation(style: let navStyle):
+            guard let destination = self.destination else {
+                throw LightRouteError.viewControllerWasNil("Destination")
+            }
+
+            guard let navController = root.navigationController else {
+                throw LightRouteError.viewControllerWasNil("Transition error, navigation")
+            }
+
+            switch navStyle {
+            case .pop:
+                let first = navController.viewControllers.first {
+                    $0.restorationIdentifier == destination.restorationIdentifier
+                }
+
+                guard let result = first else {
+                    throw LightRouteError.customError("Can't get pop controller in navigation controller stack.")
+                }
+
+                self.destination = result
+
+            default:
+                break
+            }
+
+        default:
+            break
+        }
+    }
 }

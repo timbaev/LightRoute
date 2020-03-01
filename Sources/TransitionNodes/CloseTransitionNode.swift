@@ -23,53 +23,29 @@
 //  THE SOFTWARE.
 //
 
-/// Responds style how controller will be close.
-public enum CloseTransitionStyle {
-    /// Make default dismiss controller action.
-    case `default`
-    
-    /// Make custom navigation controller close action.
-    case navigation(style: NavigationStyle)
-
-    /// Responds transition case how navigation controller will be close.
-    public enum NavigationStyle {
-
-        /// Make pop to view controller for you controller.
-        case pop(to: UIViewController)
-
-        /// Make default pop on one controller back.
-        case simplePop
-
-        /// Make pop to root action.
-        case toRoot
-
-        /// Return you to finded controller in navigation stack.
-        /// - Note: Fot this style, you should be complete method `find(pop:)`
-        case findedPop
-    }
-}
-
 public final class CloseTransitionNode {
-    
-    // Main transition data.
-    internal unowned var root: UIViewController
-    
+
+    // MARK: - Instance Properties
+
     /// Shows animated this transition or not.
     public var isAnimated: Bool {
         return animated
     }
+
+    // MARK: -
     
-    // MARK: Private
+    // Main transition data.
+    unowned var root: UIViewController
+
     /// Set and get current transition animate state.
-    internal var animated: Bool = true
+    var animated: Bool = true
     
     /// Wait transition post action.
-    internal var postLinkAction: TransitionPostLinkAction?
+    var postLinkAction: TransitionPostLinkAction?
     
-    internal var findPopController: UIViewController?
-    // MARK: -
-    // MARK: Initialize
-    
+    var findPopController: UIViewController?
+
+    // MARK: - Initializers
     
     ///
     /// Initialize transition node for current transition.
@@ -82,6 +58,8 @@ public final class CloseTransitionNode {
     init(root: UIViewController) {
         self.root = root
     }
+
+    // MARK: - Instance Methods
     
     ///
     /// This method find controller in navigation stack, for popToViewController method.
@@ -93,9 +71,12 @@ public final class CloseTransitionNode {
     /// - Throws: Throw error, if parent view controller not navigation controller.
     ///
     public func find(pop completionHandler: (UIViewController) -> Bool) throws -> CloseTransitionNode {
-        guard let parent = root.parent, let navigationController = parent as? UINavigationController
-            else { throw LightRouteError.viewControllerWasNil("Navigation") }
+        guard let parent = self.root.parent, let navigationController = parent as? UINavigationController else {
+            throw LightRouteError.viewControllerWasNil("Navigation")
+        }
+
         self.findPopController = navigationController.children.first(where: completionHandler)
+
         return self
     }
     
@@ -111,35 +92,42 @@ public final class CloseTransitionNode {
         self.postLinkAction = nil
         
         self.postLinkAction { [weak self] in
-            
             guard let root = self?.root, let animated = self?.isAnimated else {
                 throw LightRouteError.viewControllerWasNil("Root")
             }
             
             switch style {
             case .navigation(style: let navStyle):
-                
-                guard let parent = root.parent, let navigationController = parent as? UINavigationController
-                    else { throw LightRouteError.viewControllerWasNil("Navigation") }
+                guard let parent = root.parent, let navigationController = parent as? UINavigationController else {
+                    throw LightRouteError.viewControllerWasNil("Navigation")
+                }
                 
                 switch navStyle {
                 case .pop(to: let controller):
                     navigationController.popToViewController(controller, animated: animated)
+
                 case .simplePop:
                     if navigationController.children.count > 1 {
-                        guard let controller = navigationController.children.dropLast().last else { return }
+                        guard let controller = navigationController.children.dropLast().last else {
+                            return
+                        }
+
                         navigationController.popToViewController(controller, animated: animated)
                     } else {
-                        throw LightRouteError.customError("Can't do popToViewController(:animated), because childViewControllers < 1")
+                        throw LightRouteError.customError("Can't do popToViewController(_:,animated:), because childViewControllers < 1")
                     }
+
                 case .toRoot:
                     navigationController.popToRootViewController(animated: animated)
+
                 case .findedPop:
                     guard let findedController = self?.findPopController else {
                         throw LightRouteError.customError("Finded controller can't be nil!")
                     }
+
                     navigationController.popToViewController(findedController, animated: animated)
                 }
+
             case .default:
                 root.dismiss(animated: animated, completion: nil)
             }
@@ -168,7 +156,6 @@ public final class CloseTransitionNode {
     }
     
     // MARK: -
-    // MARK: Private methods
     
     ///
     /// This method waits to be able to fire.

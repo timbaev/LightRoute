@@ -27,6 +27,8 @@ import Foundation
 
 /// Describe all error in LightRoute
 public enum LightRouteError: LocalizedError {
+
+    // MARK: - Enumeration Cases
     
     /// If operation could not be cast moduleInput or controller to type.
     case castError(controller: String, type: String)
@@ -46,18 +48,25 @@ public enum LightRouteError: LocalizedError {
     /// Something error.
     case customError(String)
 
+    // MARK: - Instance Properties
+
     var localizedDescription: String {
         switch self {
         case .castError(let controller, let type):
             return "[LightRoute]: Can't cast type \"\(controller)\" to \(type) object"
+
         case .viewControllerWasNil(let controller):
             return "[LightRoute]: \(controller) controller was nil"
+
         case .customTransitionFail:
             return "[LightRoute]: Can't complete custom transition"
+
         case .storyboardWasNil:
             return "[LightRoute]: Current storyboard was nil."
+
         case .restorationId(let identifier):
             return "[LightRoute]: View controller with \(identifier) not found!"
+
         case .customError(let error):
             return "[LightRoute]: " + error
         }
